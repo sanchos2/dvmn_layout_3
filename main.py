@@ -4,6 +4,7 @@ import os
 from tqdm import tqdm
 import urllib3
 from pathvalidate import sanitize_filename
+from urllib.parse import urljoin
 
 
 def get_response(url):
@@ -32,6 +33,22 @@ def get_filename(url):
     return [text.strip() for text in title.text.split('::')][0]
 
 
+def download_img(url, filename=None, folder='img/'):
+    path_to_package = os.getcwd()
+    os.makedirs(os.path.join(path_to_package, folder), exist_ok=True)
+    response = get_response(url)
+    soup = BeautifulSoup(response.text, 'lxml')
+    img = soup.find('div', class_='bookimage')
+    if not img:
+        return None
+    abs_img_url = urljoin('https://tululu.org/', img.find('img')['src'])
+    img_name = abs_img_url.split('/')[-1]
+    path_to_file = os.path.join(folder, img_name)
+    raw_img = get_response(abs_img_url)
+    with open(path_to_file, 'wb') as file:
+        file.write(raw_img.content)
+
+
 def download_txt(url, filename, folder='books/'):
     """Функция для скачивания текстовых файлов.
     Args:
@@ -52,9 +69,11 @@ def download_txt(url, filename, folder='books/'):
 
 
 if __name__ == '__main__':
-    for book_id in tqdm(range(1, 11)):
+    for book_id in range(1, 11):
         name_url = f'https://tululu.org/b{book_id}'
         book_url = f'http://tululu.org/txt.php?id={book_id}'
         filename = f'{book_id}. {get_filename(name_url)}'
         download_txt(book_url, filename)
+        download_img(name_url)
+
 
