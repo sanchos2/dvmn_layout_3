@@ -33,6 +33,20 @@ def get_filename(url):
     return [text.strip() for text in title.text.split('::')][0]
 
 
+def download_comments(url):
+    response = get_response(url)
+    soup = BeautifulSoup(response.text, 'lxml')
+    comments = soup.find_all('div', class_='texts')
+    comments_list = []
+    for comment in comments:
+        try:
+            text = comment.find('span').text
+        except AttributeError:
+            break
+        comments_list.append(text)
+    return comments_list
+
+
 def download_img(url, filename=None, folder='img/'):
     path_to_package = os.getcwd()
     os.makedirs(os.path.join(path_to_package, folder), exist_ok=True)
@@ -73,7 +87,8 @@ if __name__ == '__main__':
         name_url = f'https://tululu.org/b{book_id}'
         book_url = f'http://tululu.org/txt.php?id={book_id}'
         filename = f'{book_id}. {get_filename(name_url)}'
-        download_txt(book_url, filename)
-        download_img(name_url)
+        # download_txt(book_url, filename)
+        # download_img(name_url)
+        print(download_comments(name_url))
 
 
