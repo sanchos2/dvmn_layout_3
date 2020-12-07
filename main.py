@@ -30,10 +30,23 @@ def get_filename(url):
     response = get_response(url)
     soup = BeautifulSoup(response.text, 'lxml')
     title = soup.find('td', class_='ow_px_td').find('h1')
-    return [text.strip() for text in title.text.split('::')][0]
+    return [text.strip() for text in title.text.split('::')]
 
 
-def download_comments(url):
+def get_genres(url):
+    response = get_response(url)
+    soup = BeautifulSoup(response.text, 'lxml')
+    try:
+        raw_genres = soup.find('td', class_='ow_px_td').find('span', class_='d_book').find_all('a')
+    except AttributeError:
+        return None
+    genres = []
+    for item in raw_genres:
+        genres.append(item.text)
+    return genres
+
+
+def get_comments(url):
     response = get_response(url)
     soup = BeautifulSoup(response.text, 'lxml')
     comments = soup.find_all('div', class_='texts')
@@ -86,9 +99,12 @@ if __name__ == '__main__':
     for book_id in range(1, 11):
         name_url = f'https://tululu.org/b{book_id}'
         book_url = f'http://tululu.org/txt.php?id={book_id}'
-        filename = f'{book_id}. {get_filename(name_url)}'
+        filename = f'{book_id}. {get_filename(name_url)[0]}'
+        genres = get_genres(name_url)
         # download_txt(book_url, filename)
         # download_img(name_url)
-        print(download_comments(name_url))
+        # print(get_comments(name_url))
+        print(filename)
+        print(genres)
 
 
