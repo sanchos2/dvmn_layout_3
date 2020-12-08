@@ -135,4 +135,4 @@ venv/
 media/
 .env
 books/
-img/
+image/

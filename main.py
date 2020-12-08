@@ -1,7 +1,6 @@
 from bs4 import BeautifulSoup
 import requests
 import os
-from tqdm import tqdm
 import urllib3
 from pathvalidate import sanitize_filename
 from urllib.parse import urljoin
@@ -60,7 +59,7 @@ def get_comments(url):
     return comments_list
 
 
-def download_img(url, filename=None, folder='img/'):
+def download_img(url, filename=None, folder='image/'):
     path_to_package = os.getcwd()
     os.makedirs(os.path.join(path_to_package, folder), exist_ok=True)
     response = get_response(url)
@@ -74,6 +73,7 @@ def download_img(url, filename=None, folder='img/'):
     raw_img = get_response(abs_img_url)
     with open(path_to_file, 'wb') as file:
         file.write(raw_img.content)
+    return path_to_file
 
 
 def download_txt(url, filename, folder='books/'):
@@ -93,18 +93,4 @@ def download_txt(url, filename, folder='books/'):
     if response.headers['Content-Type'] == 'text/plain; charset="utf-8"':
         with open(path_to_file, 'w', encoding='utf8') as file:
             file.write(response.text)
-
-
-if __name__ == '__main__':
-    for book_id in range(1, 11):
-        name_url = f'https://tululu.org/b{book_id}'
-        book_url = f'http://tululu.org/txt.php?id={book_id}'
-        filename = f'{book_id}. {get_filename(name_url)[0]}'
-        genres = get_genres(name_url)
-        # download_txt(book_url, filename)
-        # download_img(name_url)
-        # print(get_comments(name_url))
-        print(filename)
-        print(genres)
-
-
+    return path_to_file
