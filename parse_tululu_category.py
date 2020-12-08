@@ -8,20 +8,15 @@ from main import download_img, download_txt, get_comments, get_genres, get_filen
 def get_books_ids(url):
     response = get_response(url)
     soup = BeautifulSoup(response.text, 'lxml')
-    try:
-        raw_ids = soup.find('table', class_='tabs').find_all('table', class_='d_book')
-    except AttributeError:
-        return None
-    ids = []
-    for item in raw_ids:
-        id = item.find('div', class_='bookimage').find('a')['href']
-        ids.append(id)
+    selector = '.tabs .d_book .bookimage a'
+    raw_ids = soup.select(selector)
+    ids = [item['href'] for item in raw_ids]
     return ids
 
 
 if __name__ == '__main__':
     books_description = []
-    for page in range(1, 5):
+    for page in range(1, 4):
         url = f'https://tululu.org/l55/{page}'
         ids = get_books_ids(url)
         for id in ids:

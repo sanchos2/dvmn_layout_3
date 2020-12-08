@@ -28,7 +28,8 @@ def get_filename(url):
     """Функция для парсинга названия книги."""
     response = get_response(url)
     soup = BeautifulSoup(response.text, 'lxml')
-    title = soup.find('td', class_='ow_px_td').find('h1')
+    selector = '.ow_px_td h1'
+    title = soup.select_one(selector)
     return [text.strip() for text in title.text.split('::')]
 
 
@@ -36,7 +37,8 @@ def get_genres(url):
     response = get_response(url)
     soup = BeautifulSoup(response.text, 'lxml')
     try:
-        raw_genres = soup.find('td', class_='ow_px_td').find('span', class_='d_book').find_all('a')
+        selector = '.ow_px_td span.d_book a'
+        raw_genres = soup.select(selector)
     except AttributeError:
         return None
     genres = []
@@ -48,11 +50,12 @@ def get_genres(url):
 def get_comments(url):
     response = get_response(url)
     soup = BeautifulSoup(response.text, 'lxml')
-    comments = soup.find_all('div', class_='texts')
+    selector = '.texts span'
+    comments = soup.select(selector)
     comments_list = []
     for comment in comments:
         try:
-            text = comment.find('span').text
+            text = comment.text
         except AttributeError:
             break
         comments_list.append(text)
@@ -64,10 +67,11 @@ def download_img(url, filename=None, folder='image/'):
     os.makedirs(os.path.join(path_to_package, folder), exist_ok=True)
     response = get_response(url)
     soup = BeautifulSoup(response.text, 'lxml')
-    img = soup.find('div', class_='bookimage')
+    selector = '.bookimage img'
+    img = soup.select_one(selector)
     if not img:
         return None
-    abs_img_url = urljoin('https://tululu.org/', img.find('img')['src'])
+    abs_img_url = urljoin('https://tululu.org/', img['src'])
     img_name = abs_img_url.split('/')[-1]
     path_to_file = os.path.join(folder, img_name)
     raw_img = get_response(abs_img_url)
