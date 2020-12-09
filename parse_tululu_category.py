@@ -1,8 +1,28 @@
+import argparse
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 import json
 
 from main import download_img, download_txt, get_comments, get_genres, get_filename, get_response
+
+
+def create_parser():
+    parser = argparse.ArgumentParser(
+        description='Закачиватель книжек ;)'
+    )
+    parser.add_argument(
+        '--start_page',
+        help='Начальная страница',
+        required=True,
+        type=int,
+    )
+    parser.add_argument(
+        '--end_page',
+        help='Конечная страница',
+        type=int,
+        default=702,  # не совсем понятно как ограничивать. парсить начальную страницу и смотреть сколько всего их?
+    )
+    return parser
 
 
 def get_books_ids(url):
@@ -15,12 +35,16 @@ def get_books_ids(url):
 
 
 if __name__ == '__main__':
+    parser = create_parser()
+    namespace = parser.parse_args()
+
     books_description = []
-    for page in range(1, 4):
+    for page in range(namespace.start_page, namespace.end_page):
         url = f'https://tululu.org/l55/{page}'
         ids = get_books_ids(url)
         for id in ids:
             link = urljoin('https://tululu.org/', id)
+            print(link)
             description = get_filename(link)
             title = description[0]
             author = description[1]
