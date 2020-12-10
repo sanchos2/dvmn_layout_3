@@ -2,6 +2,7 @@ from bs4 import BeautifulSoup
 import requests
 import os
 import urllib3
+from pathlib import Path
 from pathvalidate import sanitize_filename
 from urllib.parse import urljoin
 
@@ -62,9 +63,9 @@ def get_comments(url):
     return comments_list
 
 
-def download_img(url, filename=None, folder='image/'):
-    path_to_package = os.getcwd()
-    os.makedirs(os.path.join(path_to_package, folder), exist_ok=True)
+def download_img(url, path,  folder='image/'):
+    dir = os.path.join(path, folder)
+    os.makedirs(dir, exist_ok=True)
     response = get_response(url)
     soup = BeautifulSoup(response.text, 'lxml')
     selector = '.bookimage img'
@@ -73,27 +74,28 @@ def download_img(url, filename=None, folder='image/'):
         return None
     abs_img_url = urljoin('https://tululu.org/', img['src'])
     img_name = abs_img_url.split('/')[-1]
-    path_to_file = os.path.join(folder, img_name)
+    path_to_file = os.path.join(dir, img_name)
     raw_img = get_response(abs_img_url)
     with open(path_to_file, 'wb') as file:
         file.write(raw_img.content)
     return path_to_file
 
 
-def download_txt(url, filename, folder='books/'):
+def download_txt(url, filename, path, folder='books/'):
     """Функция для скачивания текстовых файлов.
     Args:
         url (str): Cсылка на текст, который хочется скачать.
         filename (str): Имя файла, с которым сохранять.
         folder (str): Папка, куда сохранять.
+        path (str): Путь к папке куда сохранять.
     Returns:
         str: Путь до файла, куда сохранён текст.
     """
-    path_to_package = os.getcwd()
-    os.makedirs(os.path.join(path_to_package, folder), exist_ok=True)
+    dir = os.path.join(path, folder)
+    os.makedirs(dir, exist_ok=True)
     filename = sanitize_filename(filename)
     response = get_response(url)
-    path_to_file = os.path.join(folder, f'{filename}.txt')
+    path_to_file = os.path.join(dir, f'{filename}.txt')
     if response.headers['Content-Type'] == 'text/plain; charset="utf-8"':
         with open(path_to_file, 'w', encoding='utf8') as file:
             file.write(response.text)
