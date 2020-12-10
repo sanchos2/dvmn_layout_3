@@ -9,38 +9,17 @@ from main import download_img, download_txt, get_comments, get_genres, get_filen
 
 def create_parser():
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        '--start_page',
-        help='Начальная страница',
-        required=True,
-        type=int,
-    )
+    parser.add_argument('--start_page', help='Начальная страница', required=True, type=int)
     parser.add_argument(
         '--end_page',
         help='Конечная страница',
         type=int,
         default=702,  # не совсем понятно как ограничивать. парсить начальную страницу и смотреть сколько всего их?
     )
-    parser.add_argument(
-        '--dest_folder',
-        help='Путь к каталогам выходных данных',
-        default=os.getcwd(),
-    )
-    parser.add_argument(
-        '--skip_imgs',
-        help='Не скачивать картинки',
-        action='store_true'
-    )
-    parser.add_argument(
-        '--skip_txt',
-        help='Не скачивать книги',
-        action='store_true'
-    )
-    parser.add_argument(
-        '--json_path',
-        help='Путь к json файлу',
-        default=os.getcwd(),
-    )
+    parser.add_argument('--dest_folder', help='Путь к каталогу с результатами парсинга', default=os.getcwd())
+    parser.add_argument('--skip_imgs', help='Не скачивать картинки', action='store_true')
+    parser.add_argument('--skip_txt', help='Не скачивать книги', action='store_true')
+    parser.add_argument('--json_path', help='Путь к json файлу с результатами парсинга', default=os.getcwd())
     return parser
 
 
