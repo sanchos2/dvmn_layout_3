@@ -1,13 +1,16 @@
 import argparse
-from bs4 import BeautifulSoup
-from urllib.parse import urljoin
 import json
 import os
+from urllib.parse import urljoin
 
-from main import download_img, download_txt, get_comments, get_genres, get_filename, get_response
+from bs4 import BeautifulSoup
+
+from main import download_img, download_txt, get_comments
+from main import get_filename, get_genres, get_response
 
 
 def create_parser():
+    """Парсер аргументов запуска скрипта."""
     parser = argparse.ArgumentParser()
     parser.add_argument('--start_page', help='Начальная страница', required=True, type=int)
     parser.add_argument(
@@ -24,12 +27,12 @@ def create_parser():
 
 
 def get_books_ids(url):
+    """Получение списка id книг."""
     response = get_response(url)
     soup = BeautifulSoup(response.text, 'lxml')
     selector = '.tabs .d_book .bookimage a'
     raw_ids = soup.select(selector)
-    ids = [item['href'] for item in raw_ids]
-    return ids
+    return [_['href'] for _ in raw_ids]
 
 
 if __name__ == '__main__':
@@ -44,25 +47,18 @@ if __name__ == '__main__':
     books_description = []
     for page in range(namespace.start_page, namespace.end_page):
         url = f'https://tululu.org/l55/{page}'
-        ids = get_books_ids(url)
-        for id in ids:
-            link = urljoin('https://tululu.org/', id)
-            print(link)
+        books = get_books_ids(url)
+        for book in books:
+            link = urljoin('https://tululu.org/', book)
             description = get_filename(link)
             title = description[0]
             author = description[1]
-            if not skip_imgs:
-                img_src = download_img(link, path)
-            else:
-                img_src = None
-            book_url = f'http://tululu.org/txt.php?id={id[2:]}'
-            if not skip_txt:
-                book_path = download_txt(book_url, title, path)
-            else:
-                book_path = None
+            img_src = None if skip_imgs else download_img(link, path)
+            book_url = f'http://tululu.org/txt.php?id={book[2:]}'
+            book_path = None if skip_txt else download_txt(book_url, title, path)
             comments = get_comments(link)
             genres = get_genres(link)
-            book = {
+            specification = {
                 'title': title,
                 'author': author,
                 'img_src': img_src,
@@ -70,7 +66,7 @@ if __name__ == '__main__':
                 'comments': comments,
                 'genres': genres,
             }
-            books_description.append(book)
+            books_description.append(specification)
 
-    with open(description_file, 'w', encoding='utf8') as file:
-        json.dump(books_description, file, ensure_ascii=False)
+    with open(description_file, 'w', encoding='utf8') as metadata:
+        json.dump(books_description, metadata, ensure_ascii=False)
