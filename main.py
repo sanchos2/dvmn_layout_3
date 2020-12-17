@@ -25,8 +25,8 @@ def get_response(url):
         get_response(new_url)
 
 
-def get_filename(url):
-    """Функция для парсинга названия книги."""
+def get_book_description(url):
+    """Функция для парсинга названия книги и автора."""
     response = get_response(url)
     soup = BeautifulSoup(response.text, 'lxml')
     selector = '.ow_px_td h1'
@@ -34,7 +34,7 @@ def get_filename(url):
     return [text.strip() for text in title.text.split('::')]
 
 
-def get_genres(url):
+def get_book_genres(url):
     """Функция скачивания жанров."""
     response = get_response(url)
     soup = BeautifulSoup(response.text, 'lxml')
@@ -49,7 +49,7 @@ def get_genres(url):
     return genres
 
 
-def get_comments(url):
+def get_book_comments(url):
     """Функция для скачивания коментариев к книге."""
     response = get_response(url)
     soup = BeautifulSoup(response.text, 'lxml')

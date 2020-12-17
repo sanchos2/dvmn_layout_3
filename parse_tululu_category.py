@@ -4,9 +4,13 @@ import os
 from urllib.parse import urljoin
 
 from bs4 import BeautifulSoup
+from dotenv import load_dotenv
+from tqdm import tqdm
 
-from main import download_img, download_txt, get_comments
-from main import get_filename, get_genres, get_response
+from main import download_img, download_txt, get_book_comments
+from main import get_book_description, get_book_genres, get_response
+
+load_dotenv()
 
 
 def create_parser():
@@ -22,11 +26,15 @@ def create_parser():
     parser.add_argument('--dest_folder', help='Путь к каталогу с результатами парсинга', default=os.getcwd())
     parser.add_argument('--skip_imgs', help='Не скачивать картинки', action='store_true')
     parser.add_argument('--skip_txt', help='Не скачивать книги', action='store_true')
-    parser.add_argument('--json_path', help='Путь к json файлу с результатами парсинга', default=os.getcwd())
+    parser.add_argument(
+        '--json_path',
+        help='Путь к json файлу с результатами парсинга',
+        default=os.path.join(os.getcwd(), os.getenv('FILE_NAME', 'description.json')),
+    )
     return parser
 
 
-def get_books_ids(url):
+def get_rel_url(url):
     """Получение списка id книг."""
     response = get_response(url)
     soup = BeautifulSoup(response.text, 'lxml')
@@ -38,26 +46,28 @@ def get_books_ids(url):
 if __name__ == '__main__':
     parser = create_parser()
     namespace = parser.parse_args()
-    path = namespace.dest_folder
+    content_path = namespace.dest_folder
     skip_imgs = namespace.skip_imgs
     skip_txt = namespace.skip_txt
     json_path = namespace.json_path
-    os.makedirs(json_path, exist_ok=True)
-    description_file = os.path.join(json_path, 'description.json')
+    os.makedirs(os.path.split(json_path)[0], exist_ok=True)
+    # Если указан путь только к директории json файла то имя файла возьмем из переменной окружения.
+    if not os.path.split(json_path)[1]:
+        json_path = os.path.join(json_path, os.getenv('FILE_NAME', 'description.json'))
     books_description = []
     for page in range(namespace.start_page, namespace.end_page):
         url = f'https://tululu.org/l55/{page}'
-        books = get_books_ids(url)
-        for book in books:
-            link = urljoin('https://tululu.org/', book)
-            description = get_filename(link)
+        books_rel_url = get_rel_url(url)
+        for rel_url in tqdm(books_rel_url):
+            abs_url = urljoin('https://tululu.org/', rel_url)
+            description = get_book_description(abs_url)
             title = description[0]
             author = description[1]
-            img_src = None if skip_imgs else download_img(link, path)
-            book_url = f'http://tululu.org/txt.php?id={book[2:]}'
-            book_path = None if skip_txt else download_txt(book_url, title, path)
-            comments = get_comments(link)
-            genres = get_genres(link)
+            img_src = None if skip_imgs else download_img(abs_url, content_path)
+            book_url = f'http://tululu.org/txt.php?id={rel_url[2:]}'
+            book_path = None if skip_txt else download_txt(book_url, title, content_path)
+            comments = get_book_comments(abs_url)
+            genres = get_book_genres(abs_url)
             specification = {
                 'title': title,
                 'author': author,
@@ -68,5 +78,5 @@ if __name__ == '__main__':
             }
             books_description.append(specification)
 
-    with open(description_file, 'w', encoding='utf8') as metadata:
+    with open(json_path, 'w', encoding='utf8') as metadata:
         json.dump(books_description, metadata, ensure_ascii=False)
