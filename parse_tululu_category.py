@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 from tqdm import tqdm
 
 from main import download_img, download_txt, get_book_comments
-from main import get_book_description, get_book_genres, get_response
+from main import get_book_description, get_book_genres, logger, response_handler
 
 load_dotenv()
 
@@ -29,43 +29,44 @@ def create_parser():
     parser.add_argument(
         '--json_path',
         help='Путь к json файлу с результатами парсинга',
-        default=os.path.join(os.getcwd(), os.getenv('FILE_NAME', 'description.json')),
+        default=os.path.join(os.getcwd(), os.getenv('JSON_FILE_NAME', 'description.json')),
     )
     return parser
 
 
-def get_rel_url(url):
-    """Получение списка id книг."""
-    response = get_response(url)
+def get_rel_book_urls(url):
+    """Получение списка относительных адресов книг."""
+    response = response_handler(url)
     soup = BeautifulSoup(response.text, 'lxml')
     selector = '.tabs .d_book .bookimage a'
-    raw_ids = soup.select(selector)
-    return [_['href'] for _ in raw_ids]
+    tags = soup.select(selector)
+    if not tags:
+        return None
+    return [tag['href'] for tag in tags]
 
 
 if __name__ == '__main__':
     parser = create_parser()
     namespace = parser.parse_args()
-    content_path = namespace.dest_folder
-    skip_imgs = namespace.skip_imgs
-    skip_txt = namespace.skip_txt
-    json_path = namespace.json_path
-    os.makedirs(os.path.split(json_path)[0], exist_ok=True)
+    logger.info(f'Start parsing with params: {namespace}')
+    path, filename = os.path.split(namespace.json_path)
+    os.makedirs(path, exist_ok=True)
     # Если указан путь только к директории json файла то имя файла возьмем из переменной окружения.
-    if not os.path.split(json_path)[1]:
-        json_path = os.path.join(json_path, os.getenv('FILE_NAME', 'description.json'))
-    books_description = []
+    if not filename:
+        filename = os.getenv('FILE_NAME', 'description.json')
+    books = []
     for page in range(namespace.start_page, namespace.end_page):
         url = f'https://tululu.org/l55/{page}'
-        books_rel_url = get_rel_url(url)
-        for rel_url in tqdm(books_rel_url):
-            abs_url = urljoin('https://tululu.org/', rel_url)
-            description = get_book_description(abs_url)
-            title = description[0]
-            author = description[1]
-            img_src = None if skip_imgs else download_img(abs_url, content_path)
-            book_url = f'http://tululu.org/txt.php?id={rel_url[2:]}'
-            book_path = None if skip_txt else download_txt(book_url, title, content_path)
+        book_rel_urls = get_rel_book_urls(url)
+        if not book_rel_urls:
+            break
+        for rel_url in tqdm(book_rel_urls):
+            abs_url = urljoin(url, rel_url)
+            title, author = get_book_description(abs_url)
+            img_src = None if namespace.skip_imgs else download_img(abs_url, namespace.dest_folder)
+            book_id = rel_url.split('/b')[-1]
+            book_url = f'https://tululu.org/txt.php?id={book_id}'
+            book_path = None if namespace.skip_txt else download_txt(book_url, title, namespace.dest_folder)
             comments = get_book_comments(abs_url)
             genres = get_book_genres(abs_url)
             specification = {
@@ -76,7 +77,8 @@ if __name__ == '__main__':
                 'comments': comments,
                 'genres': genres,
             }
-            books_description.append(specification)
+            books.append(specification)
 
-    with open(json_path, 'w', encoding='utf8') as metadata:
-        json.dump(books_description, metadata, ensure_ascii=False)
+    with open(os.path.join(path, filename), 'w', encoding='utf8') as metadata:
+        json.dump(books, metadata, ensure_ascii=False)
+        logger.info(f'Parsing {len(books)} items done!')
