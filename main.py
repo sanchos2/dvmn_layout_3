@@ -42,8 +42,8 @@ def response_handler(url):
         response = get_response(url)
     except requests.HTTPError as err:
         logger.error(err, exc_info=True)
-        return None
-    return response
+    else:
+        return response
 
 
 def get_book_description(url):
