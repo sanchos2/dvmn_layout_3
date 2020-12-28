@@ -5,3 +5,4 @@ urllib3==1.26.2
 pathvalidate==2.3.0
 python-dotenv==0.15.0
 tqdm==4.54.0
+PyYAML~=5.3.1

@@ -1,0 +1,15 @@
+version: 1
+handlers:
+  fileHandler:
+    class: logging.handlers.RotatingFileHandler
+    maxBytes: 102400 # 10KB
+    backupCount: 3
+    formatter: myFormatter
+    filename: parser.log
+loggers:
+  parser:
+    handlers: [fileHandler]
+    level: INFO
+formatters:
+  myFormatter:
+    format: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
