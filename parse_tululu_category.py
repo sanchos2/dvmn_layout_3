@@ -1,18 +1,18 @@
 import argparse
 import json
-import logging.config
+import logging.config  # noqa: WPS301
 import os
-import yaml
 from urllib.parse import urljoin
 
 import requests
 import urllib3
+import yaml
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 from tqdm import tqdm
 
-from main import download_img, download_txt, get_book_comments
-from main import get_book_description, get_book_genres, get_response
+from main import download_img, download_txt, get_book_comments  # noqa: I001
+from main import get_book_description, get_book_genres, get_response  # noqa: I001
 
 load_dotenv()
 logger = logging.getLogger('parser')
@@ -26,7 +26,7 @@ def create_parser():
         '--end_page',
         help='Конечная страница',
         type=int,
-        default=702,  # не совсем понятно как ограничивать. парсить начальную страницу и смотреть сколько всего их?
+        default=os.getenv('END_PAGE'),
     )
     parser.add_argument('--dest_folder', help='Путь к каталогу с результатами парсинга', default=os.getcwd())
     parser.add_argument('--skip_imgs', help='Не скачивать картинки', action='store_true')
@@ -82,7 +82,7 @@ if __name__ == '__main__':
             abs_url = urljoin(url, rel_url)
             try:
                 response = get_response(abs_url)
-            except requests.exceptions.HTTPError as error:
+            except requests.exceptions.HTTPError as error:  # noqa: WPS440
                 logger.error(error, exc_info=True)
                 continue
             soup = BeautifulSoup(response.text, 'lxml')
@@ -94,7 +94,7 @@ if __name__ == '__main__':
             else:
                 try:
                     img_src = download_img(abs_url, namespace.dest_folder)
-                except requests.exceptions.HTTPError as error:
+                except requests.exceptions.HTTPError as error:  # noqa: WPS440
                     logger.error(error, exc_info=True)
                     continue
             book_url = f'https://tululu.org/txt.php?id={rel_url.split("/b")[-1]}'
@@ -103,7 +103,7 @@ if __name__ == '__main__':
             else:
                 try:
                     book_path = download_txt(book_url, title, namespace.dest_folder)
-                except requests.exceptions.HTTPError as error:
+                except requests.exceptions.HTTPError as error:  # noqa: WPS440
                     logger.error(error, exc_info=True)
                     continue
             specification = {
