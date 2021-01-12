@@ -26,7 +26,7 @@ def create_parser():
         '--end_page',
         help='Конечная страница',
         type=int,
-        default=os.getenv('END_PAGE', 702),
+        default=os.getenv('END_PAGE', 702),  # noqa: WPS432
     )
     parser.add_argument('--dest_folder', help='Путь к каталогу с результатами парсинга', default=os.getcwd())
     parser.add_argument('--skip_imgs', help='Не скачивать картинки', action='store_true')
@@ -55,9 +55,9 @@ def configure_logging():
         with open(os.getenv('LOG_CONFIG'), 'r') as log_config:
             config = yaml.safe_load(log_config.read())
             logging.config.dictConfig(config)
-    except FileNotFoundError as error:
+    except FileNotFoundError:
         logging.basicConfig(level=logging.ERROR)
-        logger.error(error, exc_info=False)
+        logger.exception('File with logging settings not found!')
 
 
 if __name__ == '__main__':
@@ -75,15 +75,15 @@ if __name__ == '__main__':
         url = f'https://tululu.org/l55/{page}'
         try:
             book_rel_urls = get_rel_book_urls(url)
-        except requests.exceptions.HTTPError as error:
-            logger.error(error, exc_info=True)
+        except requests.exceptions.HTTPError:
+            logger.exception('Error opening page with books.')
             continue
         for rel_url in tqdm(book_rel_urls):
             abs_url = urljoin(url, rel_url)
             try:
                 response = get_response(abs_url)
-            except requests.exceptions.HTTPError as error:  # noqa: WPS440
-                logger.error(error, exc_info=True)
+            except requests.exceptions.HTTPError:  # noqa: WPS440
+                logger.exception('Book description page open error occurred.')
                 continue
             soup = BeautifulSoup(response.text, 'lxml')
             title, author = get_book_description(soup)
@@ -95,14 +95,14 @@ if __name__ == '__main__':
             if not namespace.skip_imgs:
                 try:
                     img_src = download_img(abs_url, namespace.dest_folder)
-                except requests.exceptions.HTTPError as error:  # noqa: WPS440
-                    logger.error(error, exc_info=True)
+                except requests.exceptions.HTTPError:  # noqa: WPS440
+                    logger.exception('Image download error occurred.')
                     continue
             if not namespace.skip_txt:
                 try:
                     book_path = download_txt(book_url, namespace.dest_folder)
-                except requests.exceptions.HTTPError as error:  # noqa: WPS440
-                    logger.error(error, exc_info=True)
+                except requests.exceptions.HTTPError:  # noqa: WPS440
+                    logger.exception('Book download error occurred.')
                     continue
             specification = {
                 'title': title,
