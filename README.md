@@ -38,9 +38,15 @@ pip install -r requirements.txt
 ```
 JSON_FILE_NAME=my_file.json
 ```
+
 Конфигурация логгера содержится в файле logging.yaml и подключается в файле .env переменной LOG_CONFIG. Пример:
 ```
 LOG_CONFIG=logging.yaml
+```
+
+Последняя страница сайта задается в .env файле
+```
+END_PAGE=702
 ```
 
 Обязательный параметр `--start_page`, остальные опциональные.

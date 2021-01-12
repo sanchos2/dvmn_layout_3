@@ -26,7 +26,7 @@ def create_parser():
         '--end_page',
         help='Конечная страница',
         type=int,
-        default=os.getenv('END_PAGE'),
+        default=os.getenv('END_PAGE', 702),
     )
     parser.add_argument('--dest_folder', help='Путь к каталогу с результатами парсинга', default=os.getcwd())
     parser.add_argument('--skip_imgs', help='Не скачивать картинки', action='store_true')
@@ -89,20 +89,18 @@ if __name__ == '__main__':
             title, author = get_book_description(soup)
             comments = get_book_comments(soup)
             genres = get_book_genres(soup)
-            if namespace.skip_imgs:
-                img_src = None
-            else:
+            book_url = f'https://tululu.org/txt.php?id={rel_url.split("/b")[-1]}'
+            book_path = None
+            img_src = None
+            if not namespace.skip_imgs:
                 try:
                     img_src = download_img(abs_url, namespace.dest_folder)
                 except requests.exceptions.HTTPError as error:  # noqa: WPS440
                     logger.error(error, exc_info=True)
                     continue
-            book_url = f'https://tululu.org/txt.php?id={rel_url.split("/b")[-1]}'
-            if namespace.skip_txt:
-                book_path = None
-            else:
+            if not namespace.skip_txt:
                 try:
-                    book_path = download_txt(book_url, title, namespace.dest_folder)
+                    book_path = download_txt(book_url, namespace.dest_folder)
                 except requests.exceptions.HTTPError as error:  # noqa: WPS440
                     logger.error(error, exc_info=True)
                     continue

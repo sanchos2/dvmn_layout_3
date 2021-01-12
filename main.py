@@ -1,3 +1,4 @@
+import hashlib
 import logging
 import os
 from urllib.parse import urljoin
@@ -5,10 +6,16 @@ from urllib.parse import urljoin
 import requests
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
-from pathvalidate import sanitize_filename
 
 load_dotenv()
 logger = logging.getLogger('parser.main')
+
+
+def get_hash(content):  # noqa: WPS110
+    """Получает хеш содержимого."""
+    hash_md5 = hashlib.md5()  # noqa: S303
+    hash_md5.update(content)
+    return hash_md5.hexdigest()
 
 
 def check_for_redirect(response):
@@ -66,19 +73,20 @@ def download_img(url, path, folder='image/'):
     if not img:
         return None
     abs_img_url = urljoin('https://tululu.org/', img['src'])
-    img_name = abs_img_url.split('/')[-1]
-    path_to_file = os.path.join(directory, img_name)
     raw_img = get_response(abs_img_url)
+    img_name = get_hash(raw_img.content)
+    path_to_file = os.path.join(directory, f'{img_name}.jpg')
+
     with open(path_to_file, 'wb') as image:
         image.write(raw_img.content)
     return path_to_file
 
 
-def download_txt(url, filename, path, folder='books/'):
+def download_txt(url, path, folder='books/'):
     """Скачивает текст книги."""
     directory = create_dir(path, folder)
-    filename = sanitize_filename(filename)
     response = get_response(url)
+    filename = get_hash(response.text.encode('utf-8'))
     path_to_file = os.path.join(directory, f'{filename}.txt')
     if response.headers['Content-Type'] == 'text/plain; charset="utf-8"':
         with open(path_to_file, 'w', encoding='utf8') as book:
