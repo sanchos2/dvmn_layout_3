@@ -2,6 +2,7 @@ import argparse
 import json
 import logging.config  # noqa: WPS301
 import os
+from typing import List, Optional
 from urllib.parse import urljoin
 
 import requests
@@ -18,7 +19,7 @@ load_dotenv()
 logger = logging.getLogger('parser')
 
 
-def create_parser():
+def create_parser() -> argparse.ArgumentParser:
     """Создание аргументов запуска скрипта."""
     parser = argparse.ArgumentParser()
     parser.add_argument('--start_page', help='Начальная страница', required=True, type=int)
@@ -39,7 +40,7 @@ def create_parser():
     return parser
 
 
-def get_rel_book_urls(url):
+def get_rel_book_urls(url: str) -> Optional[List[str]]:
     """Получает список относительных адресов книг."""
     response = get_response(url)
     soup = BeautifulSoup(response.text, 'lxml')

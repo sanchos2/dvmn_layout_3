@@ -1,6 +1,7 @@
 import hashlib
 import logging
 import os
+from typing import List, Optional, Union
 from urllib.parse import urljoin
 
 import requests
@@ -11,20 +12,20 @@ load_dotenv()
 logger = logging.getLogger('parser.main')
 
 
-def get_hash(content):  # noqa: WPS110
+def get_hash(content: Union[bytes]) -> str:  # noqa: WPS110
     """Получает хеш содержимого."""
     hash_md5 = hashlib.md5()  # noqa: S303
     hash_md5.update(content)
     return hash_md5.hexdigest()
 
 
-def check_for_redirect(response):
+def check_for_redirect(response: requests.models.Response):
     """Проверяет наличие редиректа."""
     if response.history:
         raise requests.exceptions.HTTPError
 
 
-def get_response(url):
+def get_response(url: str) -> requests.models.Response:
     """получает ответ на запрос по url."""
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:74.0) Gecko/20100101 Firefox/74.0',
@@ -35,13 +36,13 @@ def get_response(url):
     return response
 
 
-def get_book_description(soup):
+def get_book_description(soup) -> List[str]:
     """Получает название книги и автора."""
     title = soup.select_one('.ow_px_td h1')
     return [text.strip() for text in title.text.split('::')]
 
 
-def get_book_genres(soup):
+def get_book_genres(soup) -> Optional[List[str]]:
     """Получает жанр книги."""
     raw_genres = soup.select('.ow_px_td span.d_book a')
     if not raw_genres:
@@ -49,7 +50,7 @@ def get_book_genres(soup):
     return [genre.text for genre in raw_genres]
 
 
-def get_book_comments(soup):
+def get_book_comments(soup) -> Optional[List[str]]:
     """Получает коментарии к книге."""
     comment_tags = soup.select('.texts span')
     if not comment_tags:
@@ -57,14 +58,14 @@ def get_book_comments(soup):
     return [comment.text for comment in comment_tags]
 
 
-def create_dir(path, folder):
+def create_dir(path: str, folder: str) -> str:
     """Создает директорию."""
     directory = os.path.join(path, folder)
     os.makedirs(directory, exist_ok=True)
     return directory
 
 
-def download_img(url, path, folder='image/'):
+def download_img(url: str, path: str, folder='image/') -> Optional[str]:
     """Скачивает обложку книги."""
     directory = create_dir(path, folder)
     response = get_response(url)
@@ -82,7 +83,7 @@ def download_img(url, path, folder='image/'):
     return path_to_file
 
 
-def download_txt(url, path, folder='books/'):
+def download_txt(url: str, path: str, folder='books/') -> str:
     """Скачивает текст книги."""
     directory = create_dir(path, folder)
     response = get_response(url)
